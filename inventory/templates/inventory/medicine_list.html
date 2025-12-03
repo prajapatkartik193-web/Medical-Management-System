@@ -1,0 +1,187 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}Medicines - {{ block.super }}{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-primary-emphasis">
+            <i class="bi bi-prescription2 me-2"></i>Medicine Stock
+        </h1>
+        <a href="{% url 'add_medicine' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Add New Medicine
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{% url 'medicine_list' %}">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="q" placeholder="Search for a medicine by name..." value="{{ query|default:'' }}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Supplier</th>
+                            <th scope="col" class="text-center">Stock Status</th>
+                            <th scope="col" class="text-end">MRP (₹)</th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for medicine in medicines %}
+                        <tr>
+                            <td><strong>{{ medicine.name }}</strong></td>
+                            <td>{{ medicine.supplier.name }}</td>
+                            <td class="text-center">
+                                {% if medicine.in_stock_total > 0 %}
+                                    <span class="badge bg-success-subtle border border-success-subtle text-success-emphasis rounded-pill">
+                                        In Stock ({{ medicine.in_stock_total }})
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle border border-danger-subtle text-danger-emphasis rounded-pill">
+                                        Out of Stock
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">{{ medicine.mrp|floatformat:2 }}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-info btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#medicineDetailModal"
+                                        data-name="{{ medicine.name }}"
+                                        data-supplier="{{ medicine.supplier.name }}"
+                                        data-description="{{ medicine.description|default:'No description provided.' }}"
+                                        data-stock="{{ medicine.in_stock_total }}"
+                                        data-mrp="{{ medicine.mrp }}">
+                                    <i class="bi bi-info-circle"></i> View
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#addStockModal"
+                                        data-name="{{ medicine.name }}"
+                                        data-pk="{{ medicine.pk }}">
+                                    <i class="bi bi-box-arrow-in-down"></i> Add Stock
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-5">
+                                <i class="bi bi-search fs-1 d-block mb-3"></i>
+                                {% if query %}
+                                    <h4>No medicines found matching "{{ query }}"</h4>
+                                {% else %}
+                                    <h4>No medicines have been added yet.</h4>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="medicineDetailModal" tabindex="-1" aria-labelledby="medicineDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="medicineDetailModalLabel">Medicine Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h3 id="modalMedicineName" class="text-primary-emphasis"></h3>
+                    <hr>
+                    <p><strong>Supplier:</strong> <span id="modalMedicineSupplier"></span></p>
+                    <p><strong>Stock:</strong> <span id="modalMedicineStock"></span></p>
+                    <p><strong>MRP:</strong> ₹<span id="modalMedicineMrp"></span></p>
+                    <p class="mt-3"><strong>Description:</strong></p>
+                    <p id="modalMedicineDescription" class="text-muted" style="white-space: pre-wrap;"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addStockModal" tabindex="-1" aria-labelledby="addStockModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="addStockForm" method="post">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addStockModalLabel">Add Stock</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Enter the quantity of new stock received for <strong id="modalStockMedicineName"></strong>.</p>
+                        <div class="mb-3">
+                            <label for="additional_stock" class="form-label">Quantity to Add</label>
+                            <input type="number" class="form-control" name="additional_stock" min="1" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Stock</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var medicineDetailModal = document.getElementById('medicineDetailModal');
+        medicineDetailModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var name = button.getAttribute('data-name');
+            var supplier = button.getAttribute('data-supplier');
+            var description = button.getAttribute('data-description');
+            var stock = button.getAttribute('data-stock');
+            var mrp = button.getAttribute('data-mrp');
+
+            var modalTitle = medicineDetailModal.querySelector('.modal-title');
+            var modalName = medicineDetailModal.querySelector('#modalMedicineName');
+            var modalSupplier = medicineDetailModal.querySelector('#modalMedicineSupplier');
+            var modalDescription = medicineDetailModal.querySelector('#modalMedicineDescription');
+            var modalStock = medicineDetailModal.querySelector('#modalMedicineStock');
+            var modalMrp = medicineDetailModal.querySelector('#modalMedicineMrp');
+
+            modalTitle.textContent = 'Details for ' + name;
+            modalName.textContent = name;
+            modalSupplier.textContent = supplier;
+            modalDescription.textContent = description;
+            modalStock.textContent = stock > 0 ? stock + ' units available' : 'Out of Stock';
+            modalMrp.textContent = parseFloat(mrp).toFixed(2);
+        });
+
+        var addStockModal = document.getElementById('addStockModal');
+        addStockModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var name = button.getAttribute('data-name');
+            var pk = button.getAttribute('data-pk');
+
+            var form = addStockModal.querySelector('#addStockForm');
+            form.action = `/medicines/${pk}/add_stock/`;
+
+            var modalTitle = addStockModal.querySelector('#addStockModalLabel');
+            var modalMedicineName = addStockModal.querySelector('#modalStockMedicineName');
+            
+            modalTitle.textContent = 'Add Stock for ' + name;
+            modalMedicineName.textContent = name;
+        });
+    });
+    </script>
+{% endblock %}

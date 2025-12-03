@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Invoice from Medical Store</title>
+</head>
+<body style="font-family: sans-serif;">
+    <h2>Thank you for your purchase!</h2>
+    <p>Dear {{ invoice.customer.name }},</p>
+    <p>Here are the details of your invoice #{{ invoice.id }}.</p>
+    <hr>
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Medicine</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Quantity</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Rate</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Sub-total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items.all %}
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{ item.medicine.name }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">{{ item.quantity }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">₹{{ item.rate|floatformat:2 }}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">₹{% widthratio item.rate 1 item.quantity as subtotal %}{{ subtotal|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <hr>
+    <h3 style="text-align: right;">Grand Total: ₹{{ invoice.grand_total|floatformat:2 }}</h3>
+    <p>Thank you for your business!</p>
+    <p><strong>Medical Store</strong></p>
+</body>
+</html>

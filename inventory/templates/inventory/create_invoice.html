@@ -1,0 +1,42 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}Create Invoice - {{ block.super }}{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header text-center bg-primary-subtle border-0">
+                    <h1 class="h3 my-2">
+                        <i class="bi bi-receipt"></i>
+                        Create New Invoice
+                    </h1>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-center text-muted mb-4">
+                        Select a customer to begin creating a new invoice.
+                    </p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="customer" class="form-label">Customer</label>
+                            <select name="customer" class="form-select form-select-lg" required>
+                                <option value="" selected disabled>-- Select a Customer --</option>
+                                {% for customer in customers %}
+                                    <option value="{{ customer.id }}">{{ customer.name }} ({{ customer.phone_number }})</option>
+                                {% empty %}
+                                    <option value="" disabled>No customers found. Please add a customer first.</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Create and Add Items <i class="bi bi-arrow-right-circle-fill ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

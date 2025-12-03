@@ -1,0 +1,63 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}Custom Orders - {{ block.super }}{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 text-primary-emphasis"><i class="bi bi-star-fill me-2"></i>Custom Orders</h1>
+        <a href="{% url 'add_custom_order' %}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>New Custom Order</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Customer</th>
+                            <th>Medicine</th>
+                            <th class="text-center">Qty</th>
+                            <th>Order Date</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Update Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.customer.name }}</td>
+                            <td><strong>{{ order.medicine_name }}</strong></td>
+                            <td class="text-center">{{ order.quantity }}</td>
+                            <td>{{ order.order_date|date:"d M Y" }}</td>
+                            <td class="text-center">
+                                <span class="badge 
+                                    {% if order.status == 'Delivered' %}bg-success-subtle border border-success-subtle text-success-emphasis{% endif %}
+                                    {% if order.status == 'Arrived' %}bg-info-subtle border border-info-subtle text-info-emphasis{% endif %}
+                                    {% if order.status == 'Ordered' %}bg-primary-subtle border border-primary-subtle text-primary-emphasis{% endif %}
+                                    {% if order.status == 'Pending' %}bg-warning-subtle border border-warning-subtle text-warning-emphasis{% endif %}
+                                    {% if order.status == 'Cancelled' %}bg-danger-subtle border border-danger-subtle text-danger-emphasis{% endif %}
+                                    rounded-pill">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <form action="{% url 'update_custom_order_status' order.pk %}" method="post" class="input-group input-group-sm">
+                                    {% csrf_token %}
+                                    <select name="status" class="form-select">
+                                        {% for status_val, status_disp in order.STATUS_CHOICES %}
+                                            <option value="{{ status_val }}" {% if order.status == status_val %}selected{% endif %}>{{ status_disp }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-outline-secondary">Update</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-5"><h4>No custom orders found.</h4></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

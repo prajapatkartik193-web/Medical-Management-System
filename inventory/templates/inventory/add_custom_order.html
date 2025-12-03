@@ -1,0 +1,50 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}New Custom Order - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <form method="post" class="card shadow-sm">
+            {% csrf_token %}
+            <div class="card-header text-center bg-primary-subtle border-0">
+                <h1 class="h3 my-2"><i class="bi bi-star-fill me-2"></i>New Custom Order</h1>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="customer" class="form-label">Customer</label>
+                        <select name="customer" class="form-select" required>
+                            <option value="" selected disabled>-- Select a Customer --</option>
+                            {% for customer in customers %}<option value="{{ customer.id }}">{{ customer.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label for="medicine_name" class="form-label">Medicine Name</label>
+                        <input type="text" class="form-control" name="medicine_name" placeholder="Enter the name of the medicine not in stock" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="quantity" class="form-label">Quantity</dlabel>
+                        <input type="number" class="form-control" name="quantity" min="1" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="supplier" class="form-label">Supplier to Order From</label>
+                        <select name="supplier" class="form-select" required>
+                            <option value="" selected disabled>-- Select a Supplier --</option>
+                            {% for supplier in suppliers %}<option value="{{ supplier.id }}">{{ supplier.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label for="notes" class="form-label">Notes (Optional)</label>
+                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-end border-0 bg-light-subtle">
+                <a href="{% url 'custom_order_list' %}" class="btn btn-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Order</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

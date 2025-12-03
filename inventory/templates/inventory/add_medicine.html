@@ -1,0 +1,64 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}Add Medicine - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <form method="post" class="card shadow-sm">
+            {% csrf_token %}
+            <div class="card-header text-center bg-primary-subtle border-0">
+                <h1 class="h3 my-2">
+                    <i class="bi bi-prescription2 me-2"></i>
+                    Add New Medicine
+                </h1>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="name" class="form-label">Medicine Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="supplier" class="form-label">Supplier</label>
+                        <select name="supplier" class="form-select" required>
+                            <option value="" selected disabled>-- Select a Supplier --</option>
+                            {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% empty %}
+                                <option value="" disabled>No suppliers found. Please add a supplier first.</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="in_stock_total" class="form-label">Quantity in Stock</label>
+                        <input type="number" class="form-control" name="in_stock_total" min="0" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="mrp" class="form-label">MRP (₹)</label>
+                        <input type="number" class="form-control" name="mrp" step="0.01" min="0" required>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label for="description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer text-end border-0 bg-light-subtle">
+                <a href="{% url 'medicine_list' %}" class="btn btn-secondary me-2">
+                    <i class="bi bi-x-circle me-1"></i>Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle-fill me-1"></i>Save Medicine
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

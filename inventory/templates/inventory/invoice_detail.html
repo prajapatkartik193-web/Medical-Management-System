@@ -1,0 +1,182 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}Invoice #{{ invoice.id }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show no-print" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm mb-4 no-print">
+        <div class="card-header">
+            <h5 class="mb-0">Add Medicine to Invoice</h5>
+        </div>
+        <div class="card-body">
+            <form action="{% url 'add_invoice_item' invoice.id %}" method="post" class="row g-3 align-items-end">
+                {% csrf_token %}
+                <div class="col-md-6">
+                    <label for="medicine" class="form-label">Medicine</label>
+                    <select name="medicine" class="form-select" required>
+                        <option value="" selected disabled>Choose a medicine...</option>
+                        {% for med in medicines %}
+                            <option value="{{ med.id }}">{{ med.name }} (Stock: {{ med.in_stock_total }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="quantity" class="form-label">Quantity</label>
+                    <input type="number" name="quantity" class="form-control" min="1" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-circle me-1"></i>Add
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm" id="invoice-to-print">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h4 mb-0">Invoice #{{ invoice.id }}</h2>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-sm-6">
+                    <h5 class="text-muted">From:</h5>
+                    <p class="mb-0"><strong>Medical Store</strong></p>
+                    <p class="mb-0">Bhopal, Madhya Pradesh</p>
+                    <p class="mb-0"><strong>GSTIN:</strong> YOUR_GST_NUMBER_HERE</p>
+                </div>
+                <div class="col-sm-6 text-sm-end">
+                    <h5 class="text-muted">To:</h5>
+                    <p class="mb-0"><strong>{{ invoice.customer.name }}</strong></p>
+                    <p class="mb-0">{{ invoice.customer.address|default:'' }}</p>
+                    <p class="mb-0">Phone: {{ invoice.customer.phone_number }}</p>
+                    <p class="mb-0"><strong>Date:</strong> {{ invoice.invoice_date|date:"F j, Y" }}</p>
+                </div>
+            </div>
+
+            <form action="{% url 'process_return' invoice.id %}" method="post">
+                {% csrf_token %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Medicine</th>
+                                <th scope="col" class="text-center">Qty Purchased</th>
+                                <th scope="col" class="text-end">Rate (₹)</th>
+                                <th scope="col" class="text-end">Sub-total (₹)</th>
+                                <th scope="col" class="text-center no-print" style="width: 150px;">Return Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in invoice.items.all %}
+                            <tr>
+                                <td>{{ item.medicine.name }}</td>
+                                <td class="text-center">{{ item.quantity }}</td>
+                                <td class="text-end">{{ item.rate|floatformat:2 }}</td>
+                                <td class="text-end">{% widthratio item.rate 1 item.quantity as subtotal %}{{ subtotal|floatformat:2 }}</td>
+                                <td class="text-center no-print">
+                                    <input type="number" name="return_qty_{{ item.id }}" class="form-control form-control-sm"
+                                           min="0" max="{{ item.quantity }}" value="0">
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No items have been added to this invoice.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="card-footer text-end no-print bg-light-subtle border-0">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-arrow-return-left me-1"></i> Process Return
+                    </button>
+                </div>
+            </form>
+
+            <div class="row mt-4">
+                <div class="col-md-6 no-print">
+                    <form action="{% url 'apply_discount' invoice.id %}" method="post" class="d-flex align-items-center">
+                        {% csrf_token %}
+                        <div class="input-group" style="max-width: 250px;">
+                            <span class="input-group-text">Discount</span>
+                            <input type="number" name="discount" class="form-control" value="{{ invoice.discount_percentage|floatformat:2 }}" step="0.01" min="0" max="100">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <button type="submit" class="btn btn-secondary ms-2">Apply</button>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm text-end">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted">Sub-Total:</th>
+                                <td>₹{{ invoice.sub_total|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Discount ({{ invoice.discount_percentage|floatformat:2 }}%):</th>
+                                <td>- ₹{{ invoice.discount_amount|floatformat:2 }}</td>
+                            </tr>
+                            <tr class="fw-bold">
+                                <th class="text-muted">Taxable Value:</th>
+                                <td>₹{{ invoice.taxable_total|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">CGST ({{ invoice.cgst_percentage|floatformat:2 }}%):</th>
+                                <td>+ ₹{{ invoice.cgst_amount|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">SGST ({{ invoice.sgst_percentage|floatformat:2 }}%):</th>
+                                <td>+ ₹{{ invoice.sgst_amount|floatformat:2 }}</td>
+                            </tr>
+                            <tr class="fs-5 table-light border-top border-2">
+                                <th class="text-dark">Grand Total:</th>
+                                <th class="text-dark">₹{{ invoice.grand_total|floatformat:2 }}</th>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-end mt-4 no-print">
+        <button onclick="window.print()" class="btn btn-outline-secondary">
+            <i class="bi bi-printer me-1"></i>Print Invoice
+        </button>
+        <button onclick="downloadPDF()" class="btn btn-primary">
+            <i class="bi bi-download me-1"></i>Download as PDF
+        </button>
+        {% if invoice.customer.email %}
+        <a href="{% url 'send_invoice_email' invoice.id %}" class="btn btn-success">
+            <i class="bi bi-envelope-fill me-1"></i>Send to Customer
+        </a>
+        {% endif %}
+    </div>
+
+    <script>
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const invoiceElement = document.getElementById('invoice-to-print');
+            
+            html2canvas(invoiceElement, { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save('invoice-#{{ invoice.id }}.pdf');
+            });
+        }
+    </script>
+{% endblock %}
