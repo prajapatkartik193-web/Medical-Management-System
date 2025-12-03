@@ -1,0 +1,23 @@
+{
+  "builds": [
+    {
+      "src": "medical_store/wsgi.py",
+      "use": "@vercel/python",
+      "config": { 
+        "maxLambdaSize": "15mb", 
+        "runtime": "python3.12",
+        "postbuild": "python manage.py migrate --noinput"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "medical_store/wsgi.py"
+    }
+  ]
+}
